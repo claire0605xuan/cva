@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>西部快槍手：極限對決</title>
+<style>
+  :root {
+    --ink: #2b1b12;
+    --paper: #f7e7c5;
+    --gold: #f5b942;
+    --red: #b63224;
+    --green: #2c7a4b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; color: var(--paper);
+    font-family: system-ui, -apple-system, "Noto Sans TC", sans-serif;
+    background:
+      linear-gradient(180deg, rgba(36,20,12,.45), rgba(36,20,12,.9)),
+      radial-gradient(ellipse at 50% 75%, #d78b3e 0%, #9a4c2b 38%, #382018 78%);
+    display: flex; justify-content: center; padding: 24px 14px;
+  }
+  button { font: inherit; cursor: pointer; }
+  .app { width: min(900px, 100%); }
+  header { text-align: center; margin: 10px 0 20px; }
+  .eyebrow { letter-spacing: .22em; text-transform: uppercase; color: #f5c76c; font-size: .78rem; }
+  h1 { margin: 7px 0; font-size: clamp(2rem, 6vw, 3.5rem); line-height: 1.08; text-shadow: 0 4px 0 #572819, 0 8px 20px #1a0e08; }
+  h1 span { color: var(--gold); }
+  .subtitle { color: #f2d9ad; margin: 8px 0; }
+  .panel { background: rgba(39, 23, 15, .84); border: 2px solid #d59a4d; border-radius: 18px; box-shadow: 0 14px 35px #160b08a8; overflow: hidden; }
+  .hud { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 14px; background: #29180f; border-bottom: 1px solid #9b6b36; }
+  .stat { text-align: center; padding: 8px; border-radius: 10px; background: #432819; }
+  .stat small { display: block; color: #d8b98a; font-size: .8rem; }
+  .stat strong { font-size: 1.25rem; }
+  .arena { min-height: 330px; padding: 26px 18px 22px; text-align: center; position: relative; background: linear-gradient(180deg, #5c3421, #2c1b13); }
+  .sun { width: 86px; height: 86px; border-radius: 50%; background: #f4b44b; position: absolute; top: 25px; left: 50%; transform: translateX(-50%); box-shadow: 0 0 50px #f7a83d88; }
+  .mesa { position: absolute; left: -5%; right: -5%; bottom: 0; height: 115px; background: #713b25; clip-path: polygon(0 65%, 18% 15%, 34% 58%, 53% 8%, 72% 55%, 90% 20%, 100% 50%, 100% 100%, 0 100%); opacity: .8; }
+  .arena-content { position: relative; z-index: 1; }
+  .roundline { color: #f2d6a5; font-weight: 700; margin: 0 0 12px; }
+  #signal { font-size: clamp(2.7rem, 10vw, 5.4rem); line-height: 1.1; font-weight: 1000; letter-spacing: .04em; margin: 25px 0 12px; color: #ffe0a0; text-shadow: 0 4px 0 #71351c; }
+  #signal.fire { color: #ff4c34; text-shadow: 0 0 18px #ff3b1c, 0 4px 0 #4b1009; animation: pulse .35s infinite alternate; }
+  #signal.good { color: #8de0a4; }
+  #message { min-height: 28px; color: #f6dfba; margin: 0 auto 18px; max-width: 580px; }
+  .target {
+    width: 150px; height: 150px; border-radius: 50%; border: 5px solid #e9bd75;
+    background: radial-gradient(circle, #e6c58d 0 12%, #a54a2a 13% 18%, #f0d4a0 19% 32%, #a54a2a 33% 39%, #f0d4a0 40% 60%, #64331e 61%);
+    box-shadow: 0 8px 0 #1c100a; color: #2b170d; font-size: 2.3rem; font-weight: 900;
+    display: inline-grid; place-items: center; transition: transform .1s, filter .1s;
+  }
+  .target:disabled { cursor: not-allowed; filter: grayscale(.65); opacity: .78; }
+  .target:not(:disabled):active { transform: scale(.94); }
+  .target.hit { animation: hit .3s ease-out; }
+  .actions { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; padding: 18px; background: #24150e; }
+  .btn { border: 0; border-radius: 999px; padding: 12px 22px; font-weight: 800; color: #2b190d; background: var(--gold); box-shadow: 0 4px 0 #9b5d20; }
+  .btn:hover { filter: brightness(1.08); }
+  .btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #9b5d20; }
+  .btn.secondary { color: var(--paper); background: #65402a; box-shadow: 0 4px 0 #27160e; border: 1px solid #b98246; }
+  .details { display: grid; grid-template-columns: 1.1fr .9fr; gap: 14px; margin-top: 14px; }
+  .card { padding: 16px; }
+  h2 { font-size: 1.05rem; margin: 0 0 12px; color: #f6c66e; }
+  .instructions { margin: 0; padding-left: 20px; color: #ecd5b2; line-height: 1.8; font-size: .93rem; }
+  .table-wrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+  th, td { padding: 8px 6px; text-align: center; border-bottom: 1px solid #60402b; }
+  th { color: #f4c46c; }
+  #results { display: none; margin-top: 14px; padding: 20px; text-align: center; }
+  #results.show { display: block; }
+  .rank { color: var(--gold); font-size: clamp(1.8rem, 5vw, 2.6rem); font-weight: 900; margin: 5px 0; }
+  .result-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 16px 0; }
+  .result-box { background: #432819; border-radius: 10px; padding: 12px 6px; }
+  .result-box small { display: block; color: #d8b98a; }
+  .result-box strong { display: block; font-size: 1.25rem; margin-top: 5px; }
+  footer { text-align: center; font-size: .78rem; color: #d6b58a; margin: 18px 0 4px; }
+  @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.04); } }
+  @keyframes hit { 0% { transform: scale(1); filter: brightness(1); } 45% { transform: scale(1.14); filter: brightness(1.8); } 100% { transform: scale(1); filter: brightness(1); } }
+  @media (max-width: 620px) {
+    body { padding: 12px 9px; }
+    .details { grid-template-columns: 1fr; }
+    .hud { padding: 9px; gap: 5px; }
+    .stat { padding: 7px 3px; }
+    .arena { min-height: 320px; padding-left: 10px; padding-right: 10px; }
+    .target { width: 132px; height: 132px; }
+    .result-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+<main class="app">
+  <header>
+    <div class="eyebrow">The Wild West Reaction Challenge</div>
+    <h1>西部快槍手：<span>極限對決</span></h1>
+    <p class="subtitle">穩住你的手。看準訊號，再拔槍！</p>
+  </header>
+
+  <section class="panel" aria-label="遊戲區">
+    <div class="hud">
+      <div class="stat"><small>回合 ROUND</small><strong id="round">0 / 5</strong></div>
+      <div class="stat"><small>目前得分 SCORE</small><strong id="score">0</strong></div>
+      <div class="stat"><small>生命值 LIVES</small><strong id="lives">❤️❤️❤️</strong></div>
+    </div>
+    <div class="arena">
+      <div class="sun"></div><div class="mesa"></div>
+      <div class="arena-content">
+        <p class="roundline" id="roundline">準備好成為傳奇牛仔了嗎？</p>
+        <div id="signal" aria-live="polite">READY?</div>
+        <p id="message">按下「開始對決」，等待 FIRE! 出現後再點擊靶心。</p>
+        <button id="target" class="target" disabled aria-label="射擊目標">✦</button>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn" id="startBtn">開始對決</button>
+      <button class="btn secondary" id="soundBtn" aria-pressed="true">🔊 音效：開</button>
+      <button class="btn secondary" id="resetBtn">重新開始</button>
+    </div>
+  </section>
+
+  <section class="panel" id="results" aria-live="polite">
+    <div class="eyebrow">Showdown Results</div>
+    <h2>本場對決結束</h2>
+    <div class="rank" id="rank">神槍手</div>
+    <p id="rankMessage">漂亮的一槍！</p>
+    <div class="result-grid">
+      <div class="result-box"><small>總分</small><strong id="finalScore">0</strong></div>
+      <div class="result-box"><small>平均反應</small><strong id="average">—</strong></div>
+      <div class="result-box"><small>最快反應</small><strong id="fastest">—</strong></div>
+      <div class="result-box"><small>偷跑次數</small><strong id="fouls">0</strong></div>
+      <div class="result-box"><small>剩餘生命</small><strong id="remaining">❤️❤️❤️</strong></div>
+      <div class="result-box"><small>最佳總分</small><strong id="best">0</strong></div>
+    </div>
+    <h2>回合紀錄</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>回合</th><th>結果</th><th>反應時間</th><th>得分</th></tr></thead>
+        <tbody id="history"></tbody>
+      </table>
+    </div>
+    <p style="margin-top:16px"><button class="btn" id="playAgainBtn">再挑戰一次</button></p>
+  </section>
+
+  <div class="details">
+    <section class="panel card">
+      <h2>🤠 遊戲規則</h2>
+      <ol class="instructions">
+        <li>每場最多 5 回合，每回合會隨機等待 2～5 秒。</li>
+        <li>看到 <b>FIRE!</b> 後，立刻點擊中央靶心。</li>
+        <li>訊號出現前點擊算偷跑：該回合 0 分，並扣 1 點生命。</li>
+        <li>初始有 3 點生命，生命歸零時遊戲提前結束。</li>
+        <li>反應越快，獲得的分數越高；最高每回合 100 分。</li>
+      </ol>
+    </section>
+    <section class="panel card">
+      <h2>🏆 評級標準</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>稱號</th><th>條件</th></tr></thead>
+          <tbody>
+            <tr><td>神槍手</td><td>平均 ≤ 250 ms，且無偷跑</td></tr>
+            <tr><td>快槍牛仔</td><td>平均 ≤ 350 ms，且無偷跑</td></tr>
+            <tr><td>普通牛仔</td><td>平均 ≤ 500 ms</td></tr>
+            <tr><td>慢半拍牛仔</td><td>平均 > 500 ms</td></tr>
+            <tr><td>描邊大師</td><td>曾偷跑或沒有有效射擊</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="color:#d8b98a;font-size:.82rem;margin-bottom:0">最佳紀錄會保存在這台裝置的瀏覽器中。</p>
+    </section>
+  </div>
+  <footer>FAST DRAW SHOWDOWN · 單檔 HTML 遊戲示範</footer>
+</main>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const target = $('target');
+  const startBtn = $('startBtn');
+  const soundBtn = $('soundBtn');
+  const results = $('results');
+
+  let round = 0, score = 0, lives = 3, fouls = 0;
+  let active = false, gameOver = true, soundOn = true;
+  let signalTime = 0, waitTimer = null, nextTimer = null, audio = null;
+  let history = [], validTimes = [];
+
+  function playTone(frequency = 440, duration = 0.12, type = 'sine', volume = 0.08) {
+    if (!soundOn) return;
+    try {
+      audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+      if (audio.state === 'suspended') audio.resume();
+      const oscillator = audio.createOscillator();
+      const gain = audio.createGain();
+      oscillator.type = type;
+      oscillator.frequency.setValueAtTime(frequency, audio.currentTime);
+      gain.gain.setValueAtTime(volume, audio.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audio.currentTime + duration);
+      oscillator.connect(gain); gain.connect(audio.destination);
+      oscillator.start(); oscillator.stop(audio.currentTime + duration);
+    } catch (e) { /* 若瀏覽器不支援音效，遊戲仍可繼續 */ }
+  }
+  function clearTimers() {
+    clearTimeout(waitTimer); clearTimeout(nextTimer);
+    waitTimer = null; nextTimer = null;
+  }
+  function setSignal(text, className = '') {
+    $('signal').textContent = text;
+    $('signal').className = className;
+  }
+  function updateHUD() {
+    $('round').textContent = `${round} / 5`;
+    $('score').textContent = score;
+    $('lives').textContent = '❤️'.repeat(lives) + '♡'.repeat(3 - lives);
+  }
+  function resetGame() {
+    clearTimers();
+    round = 0; score = 0; lives = 3; fouls = 0;
+    active = false; gameOver = true; signalTime = 0;
+    history = []; validTimes = [];
+    target.disabled = true;
+    target.classList.remove('hit');
+    startBtn.disabled = false;
+    startBtn.textContent = '開始對決';
+    $('roundline').textContent = '準備好成為傳奇牛仔了嗎？';
+    setSignal('READY?');
+    $('message').textContent = '按下「開始對決」，等待 FIRE! 出現後再點擊靶心。';
+    results.classList.remove('show');
+    updateHUD();
+  }
+  function startGame() {
+    resetGame();
+    gameOver = false;
+    startBtn.disabled = true;
+    startBtn.textContent = '對決進行中…';
+    results.classList.remove('show');
+    startRound();
+  }
+  function startRound() {
+    if (gameOver) return;
+    if (round >= 5 || lives <= 0) return finishGame();
+    round++;
+    active = true;
+    signalTime = 0;
+    target.disabled = false; // 等待階段點擊會判定偷跑
+    target.classList.remove('hit');
+    updateHUD();
+    $('roundline').textContent = `第 ${round} 回合 / 共 5 回合`;
+    setSignal('WAIT…');
+    $('message').textContent = '保持冷靜，不要太早開槍！';
+    const delay = 2000 + Math.random() * 3000;
+    // 等待階段允許點擊靶心以偵測偷跑
+    waitTimer = setTimeout(() => {
+      if (!active || gameOver) return;
+      signalTime = performance.now();
+      setSignal('FIRE!', 'fire');
+      $('message').textContent = '現在！點擊靶心！';
+      playTone(880, 0.2, 'square', 0.1);
+    }, delay);
+  }
+  function shoot() {
+    if (gameOver || !active) return;
+    if (!signalTime) {
+      // 在 FIRE! 前點擊，判定偷跑
+      clearTimers();
+      active = false;
+      fouls++;
+      lives = Math.max(0, lives - 1);
+      history.push({ round, result: '偷跑 Foul', time: null, points: 0 });
+      setSignal('FOUL!', '');
+      $('message').textContent = '太早開槍了！本回合 0 分，失去 1 點生命值。';
+      target.disabled = true;
+      playTone(150, 0.25, 'sawtooth', 0.09);
+      updateHUD();
+      nextTimer = setTimeout(() => {
+        if (lives <= 0 || round >= 5) finishGame();
+        else startRound();
+      }, 1200);
+      return;
+    }
+    const reaction = Math.max(0, Math.round(performance.now() - signalTime));
+    active = false;
+    clearTimers();
+    target.disabled = true;
+    target.classList.add('hit');
+    const points = reaction <= 200 ? 100 :
+      reaction <= 300 ? 90 :
+      reaction <= 400 ? 75 :
+      reaction <= 500 ? 60 :
+      reaction <= 700 ? 40 : 20;
+    score += points;
+    validTimes.push(reaction);
+    history.push({ round, result: '命中 Hit', time: reaction, points });
+    setSignal(`${reaction} ms`, 'good');
+    $('message').textContent = `命中！獲得 ${points} 分。`;
+    playTone(180, 0.1, 'sawtooth', 0.09);
+    setTimeout(() => playTone(660, 0.16, 'triangle', 0.07), 70);
+    updateHUD();
+    nextTimer = setTimeout(() => {
+      if (round >= 5 || lives <= 0) finishGame();
+      else startRound();
+    }, 1250);
+  }
+  function finishGame() {
+    clearTimers();
+    active = false; gameOver = true;
+    target.disabled = true;
+    startBtn.disabled = false;
+    startBtn.textContent = '開始對決';
+    $('roundline').textContent = '本場對決已結束';
+    setSignal('GAME OVER');
+    $('message').textContent = lives <= 0 ? '生命值用完了，下次記得沉住氣！' : '五回合挑戰完成！';
+    updateHUD();
+
+    const average = validTimes.length ? Math.round(validTimes.reduce((a,b) => a+b, 0) / validTimes.length) : null;
+    const fastest = validTimes.length ? Math.min(...validTimes) : null;
+    let rank, rankMessage;
+    if (fouls > 0 || validTimes.length === 0) {
+      rank = '描邊大師'; rankMessage = '牛仔要沉住氣，等到訊號再出手！';
+    } else if (average <= 250) {
+      rank = '神槍手'; rankMessage = '快、狠、準！你是荒野傳奇！';
+    } else if (average <= 350) {
+      rank = '快槍牛仔'; rankMessage = '反應非常俐落，繼續保持！';
+    } else if (average <= 500) {
+      rank = '普通牛仔'; rankMessage = '表現不錯，再練習就能更快！';
+    } else {
+      rank = '慢半拍牛仔'; rankMessage = '別急，穩定瞄準、熟悉節奏再挑戰！';
+    }
+    const previousBest = Number(localStorage.getItem('fastDrawBest') || 0);
+    const bestScore = Math.max(previousBest, score);
+    localStorage.setItem('fastDrawBest', String(bestScore));
+    $('rank').textContent = rank;
+    $('rankMessage').textContent = rankMessage;
+    $('finalScore').textContent = `${score} / 500`;
+    $('average').textContent = average === null ? '—' : `${average} ms`;
+    $('fastest').textContent = fastest === null ? '—' : `${fastest} ms`;
+    $('fouls').textContent = fouls;
+    $('remaining').textContent = '❤️'.repeat(lives) + '♡'.repeat(3 - lives);
+    $('best').textContent = bestScore;
+    $('history').innerHTML = history.map(item =>
+      `<tr><td>${item.round}</td><td>${item.result}</td><td>${item.time === null ? '—' : item.time + ' ms'}</td><td>${item.points}</td></tr>`
+    ).join('');
+    results.classList.add('show');
+    results.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  target.addEventListener('click', shoot);
+  startBtn.addEventListener('click', startGame);
+  $('resetBtn').addEventListener('click', resetGame);
+  $('playAgainBtn').addEventListener('click', startGame);
+  soundBtn.addEventListener('click', () => {
+    soundOn = !soundOn;
+    soundBtn.textContent = soundOn ? '🔊 音效：開' : '🔇 音效：關';
+    soundBtn.setAttribute('aria-pressed', String(soundOn));
+    if (soundOn) playTone(520, 0.1, 'sine', 0.05);
+  });
+
+  resetGame();
+})();
+</script>
+</body>
+</html>
